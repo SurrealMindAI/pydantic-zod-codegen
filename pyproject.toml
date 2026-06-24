@@ -1,0 +1,83 @@
+[project]
+name = "pydantic-zod-codegen"
+version = "1.0.0"
+description = "Pydantic v2.13 -> JSON-Schema -> Zod v4 codegen pipeline (FastUI-hybrid pattern)."
+readme = "README.md"
+authors = [
+    { name = "SurrealMind", email = "admin@surrealmind.ai" }
+]
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.13"
+keywords = ["pydantic", "zod", "codegen", "typescript", "json-schema", "ssot"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Code Generators",
+    "Typing :: Typed",
+]
+dependencies = [
+    "pydantic>=2.13,<3",
+]
+
+[project.urls]
+Homepage = "https://github.com/SurrealMindAI/pydantic-zod-codegen"
+Repository = "https://github.com/SurrealMindAI/pydantic-zod-codegen"
+Issues = "https://github.com/SurrealMindAI/pydantic-zod-codegen/issues"
+
+[project.scripts]
+pydantic-zod-codegen = "pydantic_zod_codegen.cli:main"
+
+[build-system]
+requires = ["uv_build>=0.11.13,<0.12.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "black>=26.3.1",
+    "hypothesis>=6.152.7",
+    "mypy>=2.1.0",
+    "pytest>=9.0.3",
+    "ruff>=0.15.13",
+]
+
+# Runtime prereqs NOT installed via Python:
+# - bun (runs `bunx json-schema-to-typescript@15`) — see README.md "Prerequisites"
+# - node >=18 (runtime for json-schema-to-typescript)
+
+[tool.ruff]
+line-length = 120
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.ruff.lint.per-file-ignores]
+# Fixture models are DELIBERATELY written in pre-3.10/3.12 typing forms because
+# they test those specific Pydantic v2 idioms — forward-ref strings (F-1 recursive),
+# `Union[A, B]` discriminator form (F-2), `Generic[T]` (F-3). Modernizing them
+# would defeat the test purpose.
+"tests/goldenfile/fixtures/models.py" = ["UP006", "UP007", "UP037", "UP046"]
+
+[tool.black]
+line-length = 120
+target-version = ["py313"]
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+# pythonpath includes "." so `tests.goldenfile.fixtures.models` resolves both
+# under `uv run pytest` and `uv run pydantic-zod-codegen generate tests.goldenfile.fixtures.models ...`.
+pythonpath = [".", "src"]
+addopts = "-ra --strict-markers"
+markers = [
+    "drift: drift-test against committed goldenfile fixtures",
+    "property: hypothesis property-based tests",
+]

@@ -1,0 +1,34 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+
+      - name: Install bun
+        # bunx json-schema-to-typescript@15 is shelled out by the pipeline +
+        # exercised by the emitter integration tests and the drift gate.
+        uses: oven-sh/setup-bun@v2
+
+      - name: Sync deps
+        run: uv sync --frozen
+
+      - name: Lint
+        run: |
+          uv run ruff check src tests
+          uv run ruff format --check src tests
+
+      - name: Type-check
+        run: uv run mypy src
+
+      - name: Test
+        run: uv run pytest -v
